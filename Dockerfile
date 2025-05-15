@@ -12,6 +12,7 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         postgresql-client \
+        dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -25,6 +26,12 @@ COPY . .
 # Create directory for logs
 RUN mkdir -p logs
 
+# Ensure scripts are executable
+RUN chmod +x /app/entrypoint.sh && \
+    chmod +x /app/init-db-once.sh && \
+    dos2unix /app/entrypoint.sh && \
+    dos2unix /app/init-db-once.sh
+
 # Create a non-root user
 RUN adduser --disabled-password --gecos '' appuser
 RUN chown -R appuser:appuser /app
@@ -33,5 +40,5 @@ USER appuser
 # Expose the port the app runs on
 EXPOSE 5000
 
-# Command to run the Flask app
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--threads", "2", "app:app"] 
+# Use our entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"] 
